@@ -1,5 +1,6 @@
 package com.suraev.microservice.order.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,6 +12,7 @@ import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -20,7 +22,7 @@ import java.time.Instant;
 import java.util.Set;
 
 
-@Document(collation = "order")
+@Document(collection = "order")
 @Getter
 @Setter
 @ToString
@@ -43,9 +45,8 @@ public class Order implements Serializable {
     @LastModifiedDate
     private Instant updatedAt;
 
-    @Version
-    public Integer version;
-
+/*    @Version
+    public Integer version;*/
     @Field("status")
     private OrderStatus status= OrderStatus.CREATED;
 
@@ -60,7 +61,8 @@ public class Order implements Serializable {
     private Address shippinhAddress;
 
     @Field("products")
-    @NotEmpty
+    //@NotEmpty
     private Set<@Valid Product> products;
+
 
 }

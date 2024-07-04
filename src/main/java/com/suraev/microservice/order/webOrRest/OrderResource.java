@@ -1,20 +1,25 @@
 package com.suraev.microservice.order.webOrRest;
 
+
 import com.suraev.microservice.order.domain.Order;
+import com.suraev.microservice.order.exception.BadRequestAlertException;
 import com.suraev.microservice.order.repository.OrderRepository;
 import com.suraev.microservice.order.service.OrderService;
+import com.suraev.microservice.order.util.ResponseUtil;
 import jakarta.validation.Valid;
 import org.apache.coyote.BadRequestException;
 import org.apache.tomcat.util.http.HeaderUtil;
-import org.apache.tomcat.util.http.ResponseUtil;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
@@ -31,6 +36,7 @@ public class OrderResource {
     private String applicationName;
 
     private final OrderRepository orderRepository;
+    @Autowired
     private final OrderService orderService;
 
     public OrderResource(OrderRepository orderRepository, OrderService orderService) {
@@ -43,7 +49,7 @@ public class OrderResource {
     {@Code POST /orders} : Создать новый заказ
      * @param order - это заказ, который необходимо создать
      * @return возвращает {@link ResponseEntity} со статусом {@code 201 (Created)} с телом нового заказа,или со статусом {@code 400 (Bad Request)} если у закажа уже есть ID.
-     * @throws ResponseStatusException если пытаемся добавить заказ с ID.
+     * @throws BadRequestAlertException если пытаемся добавить заказ с ID.
       */
 
     @PostMapping("/orders")
@@ -52,7 +58,7 @@ public class OrderResource {
         log.debug("REST request to save Order: {}", order);
 
         if(order.getId()!=null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "A new order cannot already have an ID");
+            throw new BadRequestAlertException("A new order cannot already have an ID",ENTITY_NAME,"idexist");
         }
 
         final var result = orderRepository.save(order);
@@ -72,15 +78,16 @@ public class OrderResource {
      * @return {@link ResponseEntity} со статусом {@code 200 (OK)} с телом обновленного заказа,
      * или со статусом {@code 400 (Bad Request)} если хотим обновить несуществующий заказ,
      * или со статусом {@code 500 (Internal Server Error)} если заказ не может быть обновлен.
-     * @throws  ResponseStatusException если пытаемся обновить заказ с несуществующим ID.
+     * @throws  BadRequestAlertException если пытаемся обновить заказ с несуществующим ID.
      */
 
     @PutMapping("/orders")
     @Transactional
     public ResponseEntity<Order> update(@Valid @RequestBody Order order) {
         log.debug("REST request to update Order: {}", order);
+
         if(order.getId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ENTITY_NAME+"id is null");
+            throw new BadRequestAlertException("Invalid id",ENTITY_NAME,"idnull");
         }
         final var result = orderRepository.save(order);
         orderService.updateOrder(result);
@@ -116,13 +123,8 @@ public class OrderResource {
     @Transactional
     public ResponseEntity<Order> getOrder(@PathVariable String id) {
         log.debug("REST request to get Order : {}", id);
-
-        try {
-            final var result = orderRepository.findById(id).orElseThrow();
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } catch (Exception e) {
-            return  new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        final var order = orderRepository.findById(id);
+        return ResponseUtil.wrapOrNotFound(order);
     }
 
     /**
@@ -149,8 +151,6 @@ public class OrderResource {
 
 
         return ResponseEntity.noContent().headers(headers).build();
-
-
 
 
 
