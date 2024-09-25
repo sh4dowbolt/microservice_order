@@ -6,21 +6,17 @@ import com.suraev.microservice.order.exception.BadRequestAlertException;
 import com.suraev.microservice.order.repository.OrderRepository;
 import com.suraev.microservice.order.service.OrderService;
 import com.suraev.microservice.order.util.ResponseUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.apache.coyote.BadRequestException;
-import org.apache.tomcat.util.http.HeaderUtil;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
+@Tag(name="Управление заказами", description = "Панель управления заказами")
 public class OrderResource {
     private final Logger log = LoggerFactory.getLogger(OrderResource.class);
     private static final String ENTITY_NAME = "order";
@@ -44,16 +41,8 @@ public class OrderResource {
         this.orderService = orderService;
     }
 
-
-    /**
-    {@Code POST /orders} : Создать новый заказ
-     * @param order - это заказ, который необходимо создать
-     * @return возвращает {@link ResponseEntity} со статусом {@code 201 (Created)} с телом нового заказа,или со статусом {@code 400 (Bad Request)} если у закажа уже есть ID.
-     * @throws BadRequestAlertException если пытаемся добавить заказ с ID.
-      */
-
+    @Operation(summary = "Создание заказа", description = "Позволяет создавать заказ")
     @PostMapping("/orders")
-    @Transactional
     public ResponseEntity<Order> createOrder(@Valid @RequestBody Order order) throws URISyntaxException {
         log.debug("REST request to save Order: {}", order);
 
@@ -72,15 +61,7 @@ public class OrderResource {
         return ResponseEntity.created(new URI("/api/orders/" + result.getId())).headers(headers).body(result);
     }
 
-    /**
-     {@Code PUT /orders} : Обновление существующего заказа
-     * @param order - для обновления существующего заказа
-     * @return {@link ResponseEntity} со статусом {@code 200 (OK)} с телом обновленного заказа,
-     * или со статусом {@code 400 (Bad Request)} если хотим обновить несуществующий заказ,
-     * или со статусом {@code 500 (Internal Server Error)} если заказ не может быть обновлен.
-     * @throws  BadRequestAlertException если пытаемся обновить заказ с несуществующим ID.
-     */
-
+    @Operation(summary = "Обновить заказ", description = "Позволяет обновить существующий заказ клиента")
     @PutMapping("/orders")
     @Transactional
     public ResponseEntity<Order> update(@Valid @RequestBody Order order) {
@@ -100,11 +81,7 @@ public class OrderResource {
         return ResponseEntity.ok().headers(headers).body(result);
     }
 
-
-    /**
-     * {@Code GET  /orders} : получить все заказы
-     * @return {@link ResponseEntity} со статусом {@code 200 (OK)} и лист заказов теле запроса.
-     */
+    @Operation(summary = "Получить все заказы", description = "Позволяет получить все существующие заказы")
     @GetMapping("/orders")
     @Transactional
     public List<Order> getAllOrders() {
@@ -112,13 +89,7 @@ public class OrderResource {
         return orderRepository.findAll();
     }
 
-
-    /**
-     * {@Code GET /orders/{id}} : получить заказ по ID
-     * @param id это ID извлекаемого заказа
-     * @throws Exception генерируется исключение при некорректном ID
-     * @return {@link ResponseEntity} со статусом {@Code 200 (OK)}  с телом заказа, или со статусом {@Code 404 (Not found)}
-     */
+    @Operation(summary = "Получить заказ по ID", description = "Позволяет получать заказ по ID")
     @GetMapping("/orders/{id}")
     @Transactional
     public ResponseEntity<Order> getOrder(@PathVariable String id) {
@@ -127,12 +98,7 @@ public class OrderResource {
         return ResponseUtil.wrapOrNotFound(order);
     }
 
-    /**
-     * {@Code DELETE /orders/{id}} : удалить заказ по ID
-     * @param id это ID удаляемого заказа
-     * @return {@link ResponseEntity} со статусом {@Code 204 (NO_CONTENT)}
-     */
-
+    @Operation(summary = "Удалить заказ", description = "Позволяет удалить заказ по ID")
     @DeleteMapping("/orders/{id}")
     @Transactional
     public ResponseEntity <Void> deleteOrder(@PathVariable String id) {
@@ -149,15 +115,7 @@ public class OrderResource {
         String message = String.format("A %s is deleted with identifier %s", ENTITY_NAME, id);
         headers.add(applicationName, message);
 
-
         return ResponseEntity.noContent().headers(headers).build();
 
-
-
     }
-
-
-
-
-
 }
