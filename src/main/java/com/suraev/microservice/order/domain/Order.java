@@ -1,6 +1,5 @@
 package com.suraev.microservice.order.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -13,13 +12,12 @@ import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-
-import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -72,8 +70,19 @@ public class Order implements Serializable {
 
     @Field("products")
     @Schema(description = "Список продуктов")
-    //@NotEmpty
+    @NotEmpty
     private Set<@Valid Product> products;
+
+
+    public void addProductToOrder(@Valid Product product) {
+        if (products == null) {
+            products = new HashSet<>();
+        }
+        products.add(product);
+    }
+    public void removeProductFromOrder(@Valid Product product) {
+        products.remove(product);
+    }
 
 
 }
