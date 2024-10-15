@@ -22,9 +22,6 @@ public class OrderService {
     @Autowired
     RestTemplate restTemplate;
 
-    @Autowired
-    ObjectMapper objectMapper;
-
     @Value("${spring.application.microservice-customer.url}")
     private String customerBaseUrl;
 

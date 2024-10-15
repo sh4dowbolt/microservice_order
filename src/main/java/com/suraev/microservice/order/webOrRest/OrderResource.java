@@ -33,7 +33,6 @@ public class OrderResource {
     private String applicationName;
 
     private final OrderRepository orderRepository;
-    @Autowired
     private final OrderService orderService;
 
     public OrderResource(OrderRepository orderRepository, OrderService orderService) {
