@@ -1,5 +1,6 @@
 package com.suraev.microservice.order.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -71,7 +72,7 @@ public class Order implements Serializable {
     @Field("products")
     @Schema(description = "Список продуктов")
     @NotEmpty
-    private Set<@Valid Product> products;
+    private Set<Product> products;
 
 
     public void addProductToOrder(@Valid Product product) {

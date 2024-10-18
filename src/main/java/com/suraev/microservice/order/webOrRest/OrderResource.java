@@ -3,8 +3,11 @@ package com.suraev.microservice.order.webOrRest;
 
 import com.suraev.microservice.order.domain.Order;
 import com.suraev.microservice.order.exception.BadRequestAlertException;
+import com.suraev.microservice.order.exception.ProductOrderException;
 import com.suraev.microservice.order.repository.OrderRepository;
 import com.suraev.microservice.order.service.OrderService;
+import com.suraev.microservice.order.service.ProductService;
+import com.suraev.microservice.order.util.HeaderUtil;
 import com.suraev.microservice.order.util.ResponseUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,30 +37,32 @@ public class OrderResource {
 
     private final OrderRepository orderRepository;
     private final OrderService orderService;
+    private final ProductService productService;
 
-    public OrderResource(OrderRepository orderRepository, OrderService orderService) {
+    public OrderResource(OrderRepository orderRepository, OrderService orderService, ProductService productService) {
         this.orderRepository = orderRepository;
         this.orderService = orderService;
+        this.productService = productService;
     }
 
     @Operation(summary = "Создание заказа", description = "Позволяет создавать заказ")
     @PostMapping("/orders")
-    public ResponseEntity<Order> createOrder(@Valid @RequestBody Order order) throws URISyntaxException {
+    public ResponseEntity<Order> createOrder(@RequestBody Order order) throws URISyntaxException {
         log.debug("REST request to save Order: {}", order);
 
         if(order.getId()!=null) {
             throw new BadRequestAlertException("A new order cannot already have an ID",ENTITY_NAME,"idexist");
         }
+        //проверяем есть ли продукты в наличие, если есть, сохраняем заказ (чтобы не создавать пустые заказы)
+        if(productService.checkOrderProducts(order)) {
+            final var result = orderRepository.save(order);
+            orderService.createOrder(result);
 
-        final var result = orderRepository.save(order);
-        orderService.createOrder(result);
-
-        HttpHeaders headers= new HttpHeaders();
-        String message = String.format("A new %s is created with identifier %s", ENTITY_NAME, result.getId().toString());
-        headers.add("X-" + applicationName + "-alert", message);
-        headers.add("X-" + applicationName + "-params", result.getId().toString());
-
-        return ResponseEntity.created(new URI("/api/orders/" + result.getId())).headers(headers).body(result);
+            HttpHeaders headers = HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, order.getId());
+            return ResponseEntity.created(new URI("/api/orders/" + result.getId())).headers(headers).body(result);
+        } else {
+            throw new BadRequestAlertException("Such products are not available, please choose another",ENTITY_NAME, "notexistproducts");
+        }
     }
 
     @Operation(summary = "Обновить заказ", description = "Позволяет обновить существующий заказ клиента")

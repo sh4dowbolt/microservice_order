@@ -9,21 +9,26 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-
+@Service
 public class ProductService {
 
     private final Logger log = LoggerFactory.getLogger(ProductService.class);
 
     private RestTemplate restTemplate;
 
-    @Value("spring.application.microservice-order.url")
+    public ProductService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @Value("${spring.application.microservice-product.url}")
     private String productBaseUrl;
 
     private static final String PRODUCT_ORDER_URL = "checkProducts";
 
-    public void checkOrderProducts(Order order) {
+    public boolean checkOrderProducts(Order order) {
         final var url = productBaseUrl+PRODUCT_ORDER_URL;
         final var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -31,19 +36,22 @@ public class ProductService {
         log.info("Order request URL: {}",url);
         try {
             final var request = new HttpEntity<>(order, headers);
-            final var responseEntity = restTemplate.postForEntity(url, request, Order.class);
-
+            final var responseEntity = restTemplate.postForEntity(url, request, Boolean.class);
+            
             if (responseEntity.getStatusCode().isError()) {
                 log.error("For Order ID: {}, error response: {} is received to check Order in Product Microservice", order.getId(), responseEntity.getStatusCodeValue());
                 throw new ProductOrderException(order.getId(), responseEntity.getStatusCodeValue());
             }
-            if (responseEntity.hasBody()) {
-                log.error("Order From Response: {}", responseEntity.getBody().getId());
+            if (responseEntity.hasBody() && responseEntity.getBody() != null) {
+                log.info("Order was checked, result is {}", responseEntity.getBody());
+                return responseEntity.getBody();
             }
         } catch (Exception e) {
             log.error("For Order ID: {}, cannot check existed products in Product Microservice for reason: {}", order.getId(),e.getMessage());
             throw new ProductOrderException(order.getId(),e.getMessage());
         }
+        return false;
+
     }
 
 }
