@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  microservice-order:
+    build: .
+    container_name: microservice-order
+    ports:
+      - target: 8100
+        published: 8100
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    links:
+      - mongodb
+    environment:
+      - SPRING_MICROSERVICE_URL=http://host.docker.internal:8090/customer/api/v1/
+      - SPRING_MONGODB_URL=mongodb://mongodb:27017/
+      - SPRING_MONGODB_DATABASE=order
+    networks:
+      - node-network
+
+  mongodb:
+    image: mongo:6-jammy
+    ports:
+      - target: 27018
+        published: 27018
+    container_name: db
+    healthcheck:
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    volumes:
+      - dbdata2:/data/db
+    networks:
+      - node-network
+
+volumes:
+  dbdata2:
+networks:
+  node-network:
+    driver: bridge
